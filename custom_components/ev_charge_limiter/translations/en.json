@@ -1,0 +1,50 @@
+{
+  "title": "EV Charge Limiter",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up EV Charge Limiter",
+        "description": "Select the OCPP energy sensor, optional live power sensor, and the entity used to stop charging. The power sensor is optional but recommended for dynamic early stop and remaining-time estimates.",
+        "data": {
+          "name": "Name",
+          "energy_sensor": "Energy sensor (kWh)",
+          "power_sensor": "Live power sensor (kW/W, optional)",
+          "stop_entity": "Stop entity",
+          "energy_mode": "Energy sensor mode",
+          "stop_service": "Stop service, use auto unless needed",
+          "create_notification": "Create notification when charging is stopped"
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Energy sensor and stop entity cannot be the same.",
+      "same_power_energy": "Power sensor cannot be the same as the energy sensor.",
+      "same_power_stop": "Power sensor cannot be the same as the stop entity."
+    },
+    "abort": {
+      "already_configured": "This EV Charge Limiter is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EV Charge Limiter options",
+        "description": "Update sensors, energy mode, and stop settings.",
+        "data": {
+          "name": "Name",
+          "energy_sensor": "Energy sensor (kWh)",
+          "power_sensor": "Live power sensor (kW/W, optional)",
+          "stop_entity": "Stop entity",
+          "energy_mode": "Energy sensor mode",
+          "stop_service": "Stop service, use auto unless needed",
+          "create_notification": "Create notification when charging is stopped"
+        }
+      }
+    },
+    "error": {
+      "same_entity": "Energy sensor and stop entity cannot be the same.",
+      "same_power_energy": "Power sensor cannot be the same as the energy sensor.",
+      "same_power_stop": "Power sensor cannot be the same as the stop entity."
+    }
+  }
+}

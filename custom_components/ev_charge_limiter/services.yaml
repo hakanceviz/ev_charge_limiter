@@ -1,0 +1,42 @@
+start_session:
+  name: Start session
+  description: Capture the current energy baseline and enable automatic stop.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: Optional if only one EV Charge Limiter is configured.
+      required: false
+      selector:
+        text:
+
+stop_now:
+  name: Stop now
+  description: Immediately call the configured charger stop entity.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: Optional if only one EV Charge Limiter is configured.
+      required: false
+      selector:
+        text:
+
+set_start_soc:
+  name: Set start SoC and start session
+  description: Set the starting vehicle battery percentage, capture baseline, and enable automatic stop.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: Optional if only one EV Charge Limiter is configured.
+      required: false
+      selector:
+        text:
+    start_soc:
+      name: Start SoC
+      description: Vehicle battery percentage at the moment charging starts.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"

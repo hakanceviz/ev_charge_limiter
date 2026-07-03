@@ -1,0 +1,13 @@
+{
+  "domain": "ev_charge_limiter",
+  "name": "EV Charge Limiter",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/YOUR_GITHUB_USER/ev_charge_limiter",
+  "integration_type": "helper",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/YOUR_GITHUB_USER/ev_charge_limiter/issues",
+  "requirements": [],
+  "version": "0.2.0"
+}

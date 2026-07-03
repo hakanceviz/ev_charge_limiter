@@ -1,0 +1,11 @@
+{
+  "name": "EV Charge Limiter",
+  "render_readme": true,
+  "domains": [
+    "sensor",
+    "number",
+    "switch",
+    "button"
+  ],
+  "homeassistant": "2024.11.0"
+}
