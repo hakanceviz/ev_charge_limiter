@@ -19,7 +19,8 @@
     "error": {
       "same_entity": "Energy sensor and stop entity cannot be the same.",
       "same_power_energy": "Power sensor cannot be the same as the energy sensor.",
-      "same_power_stop": "Power sensor cannot be the same as the stop entity."
+      "same_power_stop": "Power sensor cannot be the same as the stop entity.",
+      "same_current_other": "Current entity cannot be the same as another selected entity."
     },
     "abort": {
       "already_configured": "This EV Charge Limiter is already configured."
@@ -44,7 +45,8 @@
     "error": {
       "same_entity": "Energy sensor and stop entity cannot be the same.",
       "same_power_energy": "Power sensor cannot be the same as the energy sensor.",
-      "same_power_stop": "Power sensor cannot be the same as the stop entity."
+      "same_power_stop": "Power sensor cannot be the same as the stop entity.",
+      "same_current_other": "Current entity cannot be the same as another selected entity."
     }
   }
 }

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DATA_DYNAMIC_BUFFER_ENABLED, DATA_ENABLED, DOMAIN
+from .const import DATA_APPLY_CURRENT_ON_START, DATA_DYNAMIC_BUFFER_ENABLED, DATA_ENABLED, DATA_START_CHARGER_ON_SESSION_START, DOMAIN
 from .entity import EvChargeLimiterEntity
 from .manager import EvChargeLimiterManager
 
@@ -32,6 +32,16 @@ SWITCHES: tuple[EvSwitchDescription, ...] = (
         key="dynamic_power_buffer_enabled",
         name="Dynamic Power Buffer Enabled",
         data_key=DATA_DYNAMIC_BUFFER_ENABLED,
+    ),
+    EvSwitchDescription(
+        key="apply_current_on_start",
+        name="Apply Current On Start",
+        data_key=DATA_APPLY_CURRENT_ON_START,
+    ),
+    EvSwitchDescription(
+        key="start_charger_on_session_start",
+        name="Start Charger On Session Start",
+        data_key=DATA_START_CHARGER_ON_SESSION_START,
     ),
 )
 

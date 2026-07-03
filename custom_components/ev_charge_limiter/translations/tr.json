@@ -4,13 +4,16 @@
     "step": {
       "user": {
         "title": "EV Charge Limiter kurulumu",
-        "description": "OCPP enerji sensörünü, varsa anlık güç sensörünü ve şarjı durduracak entity'yi seç. Güç sensörü opsiyoneldir ama dinamik erken kesme ve kalan süre tahmini için önerilir.",
+        "description": "OCPP enerji sensörünü, varsa anlık güç sensörünü, charger maximum current entity'sini, şarj başlatma ve durdurma entity'lerini seç.",
         "data": {
           "name": "Ad",
           "energy_sensor": "Enerji sensörü (kWh)",
           "power_sensor": "Anlık güç sensörü (kW/W, opsiyonel)",
+          "current_entity": "Charger maximum current entity'si (A, opsiyonel)",
+          "start_entity": "Şarj başlatma entity'si (opsiyonel)",
           "stop_entity": "Şarj durdurma entity'si",
           "energy_mode": "Enerji sensörü modu",
+          "start_service": "Başlatma servisi, gerekmedikçe auto bırak",
           "stop_service": "Durdurma servisi, gerekmedikçe auto bırak",
           "create_notification": "Şarj durunca bildirim oluştur"
         }
@@ -19,7 +22,8 @@
     "error": {
       "same_entity": "Enerji sensörü ve durdurma entity'si aynı olamaz.",
       "same_power_energy": "Güç sensörü, enerji sensörüyle aynı olamaz.",
-      "same_power_stop": "Güç sensörü, durdurma entity'siyle aynı olamaz."
+      "same_power_stop": "Güç sensörü, durdurma entity'siyle aynı olamaz.",
+      "same_current_other": "Akım entity'si diğer seçilen entity'lerle aynı olamaz."
     },
     "abort": {
       "already_configured": "Bu EV Charge Limiter zaten kurulmuş."
@@ -29,13 +33,16 @@
     "step": {
       "init": {
         "title": "EV Charge Limiter ayarları",
-        "description": "Sensörleri, enerji modunu ve durdurma ayarlarını güncelle.",
+        "description": "Sensörleri, akım entity'sini, başlatma/durdurma ayarlarını ve enerji modunu güncelle.",
         "data": {
           "name": "Ad",
           "energy_sensor": "Enerji sensörü (kWh)",
           "power_sensor": "Anlık güç sensörü (kW/W, opsiyonel)",
+          "current_entity": "Charger maximum current entity'si (A, opsiyonel)",
+          "start_entity": "Şarj başlatma entity'si (opsiyonel)",
           "stop_entity": "Şarj durdurma entity'si",
           "energy_mode": "Enerji sensörü modu",
+          "start_service": "Başlatma servisi, gerekmedikçe auto bırak",
           "stop_service": "Durdurma servisi, gerekmedikçe auto bırak",
           "create_notification": "Şarj durunca bildirim oluştur"
         }
@@ -44,7 +51,8 @@
     "error": {
       "same_entity": "Enerji sensörü ve durdurma entity'si aynı olamaz.",
       "same_power_energy": "Güç sensörü, enerji sensörüyle aynı olamaz.",
-      "same_power_stop": "Güç sensörü, durdurma entity'siyle aynı olamaz."
+      "same_power_stop": "Güç sensörü, durdurma entity'siyle aynı olamaz.",
+      "same_current_other": "Akım entity'si diğer seçilen entity'lerle aynı olamaz."
     }
   }
 }

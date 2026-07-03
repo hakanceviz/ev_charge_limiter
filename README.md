@@ -4,7 +4,9 @@ Home Assistant için HACS uyumlu özel entegrasyon.
 
 Bu entegrasyon, araçtan gerçek batarya yüzdesi okunamadığı durumlarda şarj cihazının verdiği kWh değerini kullanarak tahmini hedef SoC'ye ulaşınca şarjı otomatik durdurur.
 
-v0.2.0 ile opsiyonel anlık güç sensörü desteği eklendi. Güç sensörü seçilirse entegrasyon kalan süreyi tahmin eder ve sensör gecikmesinde akabilecek enerjiyi hesaplayarak dinamik erken kesme tamponu uygular.
+v0.3.0 ile OCPP `charger_maximum_current` / maksimum şarj akımı entity desteği eklendi. Entegrasyon artık hedef amper değerini kendi slider'ında gösterir; yeni oturum başlatılırken önce şarj cihazına bu amper limitini yazar, sonra şarjı başlatır ve kWh takibini yapar.
+
+v0.2.0 ile opsiyonel anlık güç sensörü desteği eklenmişti. Güç sensörü seçilirse entegrasyon kalan süreyi tahmin eder ve sensör gecikmesinde akabilecek enerjiyi hesaplayarak dinamik erken kesme tamponu uygular.
 
 Örnek kullanım:
 
@@ -32,7 +34,10 @@ Yani şarj gücü 4 kW'dan 10 kW'a yükselirse kalan süre tahmini ve dinamik ta
 - UI üzerinden kurulum.
 - OCPP enerji sensörü ve şarj durdurma entity'si seçimi.
 - Opsiyonel anlık güç sensörü seçimi.
-- Batarya kapasitesi, başlangıç yüzdesi, hedef yüzde, AC verimi, manuel erken durdurma tamponu ve güç sensörü gecikmesi için `number` entity'leri.
+- Opsiyonel `charger_maximum_current` / maksimum akım entity seçimi.
+- Şarj başlatılırken seçilen amper değerini OCPP akım entity'sine otomatik yazma.
+- Şarj başlatma entity'si seçimi; switch ise `turn_on`, button ise `press` yapılır.
+- Batarya kapasitesi, başlangıç yüzdesi, hedef yüzde, AC verimi, charger maximum current, manuel erken durdurma tamponu ve güç sensörü gecikmesi için `number` entity'leri.
 - Otomatik durdurmayı aç/kapatmak için `switch` entity'si.
 - Dinamik güç tamponunu aç/kapatmak için ayrı `switch` entity'si.
 - Yeni oturum başlatma ve hemen durdurma için `button` entity'leri.
@@ -79,6 +84,24 @@ Opsiyoneldir ama önerilir. OCPP entegrasyonunda genelde şu tarz sensörlerden 
 
 Bu sensör `kW` veya `W` olabilir. Entegrasyon otomatik olarak `kW` değerine çevirir.
 
+### Charger maximum current entity
+
+Opsiyoneldir ama bu sürümde önerilir. OCPP entegrasyonunda genelde şu tarz bir `number` entity olur:
+
+- `number.xxx_charger_maximum_current`
+- `number.xxx_maximum_current`
+- `number.xxx_current_limit`
+
+Birim `A` olmalıdır. Günlük kullanımda entegrasyonun oluşturduğu `Charger Maximum Current` slider'ını örneğin `6`, `10`, `16`, `20`, `32` amper gibi ayarlarsınız. `Start New Session` basılınca bu değer önce OCPP entity'sine yazılır.
+
+### Start entity
+
+Opsiyoneldir. Genelde `Stop entity` ile aynı `switch.xxx_charge_control` seçilebilir. Entegrasyon yeni oturum başlatırken:
+
+- `switch` / `input_boolean` seçildiyse `turn_on` çağırır.
+- `button` seçildiyse `button.press` çağırır.
+- Boş bırakılırsa cihazın zaten otomatik şarja başladığı varsayılır.
+
 ### Stop entity
 
 Genelde OCPP cihazında şu entity seçilir:
@@ -102,11 +125,14 @@ Bu entity kapatıldığında veya basıldığında şarj durmalıdır.
 3. `Target SoC` değerini örneğin `%80` yapın.
 4. `Battery Capacity` değerini aracın kullanılabilir batarya kapasitesine yakın girin.
 5. `Charging Efficiency` için ilk denemede `%90` kullanın.
-6. `Manual Early Stop Buffer` için ilk denemede `0.10 - 0.30 kWh` kullanın.
-7. `Power Sensor Lag` için enerji/güç sensörünüz dakikada bir güncelleniyorsa `60 sn` kullanın.
-8. `Dynamic Power Buffer Enabled` açık kalsın.
-9. `Start New Session` butonuna basın veya `Auto Stop Enabled` switch'ini açın.
-10. Hedef enerjiye ulaşınca entegrasyon şarjı durdurur.
+6. `Charger Maximum Current` değerini istediğiniz amper yapın; örneğin `10 A`, `16 A` veya `32 A`.
+7. `Manual Early Stop Buffer` için ilk denemede `0.10 - 0.30 kWh` kullanın.
+8. `Power Sensor Lag` için enerji/güç sensörünüz dakikada bir güncelleniyorsa `60 sn` kullanın.
+9. `Apply Current On Start` açık kalsın.
+10. `Start Charger On Session Start` açık kalsın.
+11. `Dynamic Power Buffer Enabled` açık kalsın.
+12. `Start New Session` butonuna basın veya `Auto Stop Enabled` switch'ini açın. Entegrasyon önce amper limitini yazar, sonra şarjı başlatır.
+13. Hedef enerjiye ulaşınca entegrasyon şarjı durdurur.
 
 ## Yeni sensörler
 
@@ -115,6 +141,8 @@ Bu entity kapatıldığında veya basıldığında şarj durmalıdır.
 - `Delivered Energy`: Bu oturumda verilen enerji.
 - `Remaining Energy To Stop`: Durdurma eşiğine kalan enerji.
 - `Remaining Energy To Target`: Tam hedef enerjiye kalan enerji.
+- `Charger Maximum Current`: Entegrasyonun başlatırken uygulayacağı hedef amper.
+- `Actual Charger Maximum Current`: OCPP akım entity'sinden okunan mevcut amper limiti.
 - `Current Charging Power`: Seçilen güç sensörünün kW değeri.
 - `Dynamic Power Buffer`: Anlık güce ve sensör gecikmesine göre hesaplanan tampon.
 - `Estimated Time Remaining`: Mevcut güç değişmezse kalan süre.
@@ -160,6 +188,18 @@ Yeni oturum başlatır ve otomatik durdurmayı aktif eder.
 ### `ev_charge_limiter.stop_now`
 
 Şarjı hemen durdurur.
+
+### `ev_charge_limiter.set_charger_current`
+
+Hedef maksimum şarj akımını amper olarak ayarlar. Aktif oturum varsa ve akım entity'si seçiliyse değeri cihaza hemen uygular.
+
+Örnek:
+
+```yaml
+service: ev_charge_limiter.set_charger_current
+data:
+  current: 16
+```
 
 ### `ev_charge_limiter.set_start_soc`
 

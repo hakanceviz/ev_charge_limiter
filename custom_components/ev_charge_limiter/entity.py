@@ -38,6 +38,8 @@ class EvChargeLimiterEntity(Entity):
         return {
             "energy_sensor": self.manager.energy_sensor,
             "power_sensor": self.manager.power_sensor,
+            "current_entity": self.manager.current_entity,
+            "start_entity": self.manager.start_entity,
             "stop_entity": self.manager.stop_entity,
             "energy_mode": self.manager.energy_mode,
             "baseline_kwh": snapshot.data.get("baseline_kwh"),
@@ -46,6 +48,9 @@ class EvChargeLimiterEntity(Entity):
             "stop_threshold_kwh": snapshot.stop_threshold_kwh,
             "last_error": snapshot.data.get("last_error"),
             "stop_count": snapshot.data.get("stop_count", 0),
+            "charger_maximum_current_a": snapshot.charger_max_current_a,
+            "actual_charger_maximum_current_a": snapshot.actual_charger_max_current_a,
+            "last_applied_current": snapshot.data.get("last_applied_current"),
         }
 
     async def async_added_to_hass(self) -> None:

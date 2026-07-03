@@ -40,3 +40,24 @@ set_start_soc:
           max: 100
           step: 1
           unit_of_measurement: "%"
+
+set_charger_current:
+  name: Set charger current
+  description: Set the desired charger maximum current in amps. If a current entity is configured and the session is active, it is applied immediately.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: Optional if only one EV Charge Limiter is configured.
+      required: false
+      selector:
+        text:
+    current:
+      name: Current
+      description: Charger maximum current in amperes.
+      required: true
+      selector:
+        number:
+          min: 6
+          max: 64
+          step: 1
+          unit_of_measurement: A

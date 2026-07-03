@@ -5,13 +5,16 @@ from typing import Final
 
 DOMAIN: Final = "ev_charge_limiter"
 NAME: Final = "EV Charge Limiter"
-VERSION: Final = "0.2.0"
+VERSION: Final = "0.3.0"
 
 PLATFORMS: Final = ["sensor", "number", "switch", "button"]
 
 CONF_NAME: Final = "name"
 CONF_ENERGY_SENSOR: Final = "energy_sensor"
 CONF_POWER_SENSOR: Final = "power_sensor"
+CONF_CURRENT_ENTITY: Final = "current_entity"
+CONF_START_ENTITY: Final = "start_entity"
+CONF_START_SERVICE: Final = "start_service"
 CONF_STOP_ENTITY: Final = "stop_entity"
 CONF_ENERGY_MODE: Final = "energy_mode"
 CONF_STOP_SERVICE: Final = "stop_service"
@@ -31,6 +34,9 @@ DATA_EFFICIENCY: Final = "efficiency_percent"
 DATA_EARLY_STOP_BUFFER: Final = "early_stop_buffer_kwh"
 DATA_DYNAMIC_BUFFER_ENABLED: Final = "dynamic_buffer_enabled"
 DATA_SENSOR_LAG_SECONDS: Final = "sensor_lag_seconds"
+DATA_CHARGER_MAX_CURRENT: Final = "charger_maximum_current"
+DATA_APPLY_CURRENT_ON_START: Final = "apply_current_on_start"
+DATA_START_CHARGER_ON_SESSION_START: Final = "start_charger_on_session_start"
 DATA_ENABLED: Final = "enabled"
 DATA_BASELINE_KWH: Final = "baseline_kwh"
 DATA_INTERVAL_ACCUMULATED_KWH: Final = "interval_accumulated_kwh"
@@ -38,6 +44,7 @@ DATA_STOPPED: Final = "stopped"
 DATA_LAST_STOP_REASON: Final = "last_stop_reason"
 DATA_LAST_ERROR: Final = "last_error"
 DATA_STOP_COUNT: Final = "stop_count"
+DATA_LAST_APPLIED_CURRENT: Final = "last_applied_current"
 
 DEFAULTS: Final = {
     DATA_BATTERY_CAPACITY: 60.0,
@@ -47,6 +54,9 @@ DEFAULTS: Final = {
     DATA_EARLY_STOP_BUFFER: 0.10,
     DATA_DYNAMIC_BUFFER_ENABLED: True,
     DATA_SENSOR_LAG_SECONDS: 60.0,
+    DATA_CHARGER_MAX_CURRENT: 16.0,
+    DATA_APPLY_CURRENT_ON_START: True,
+    DATA_START_CHARGER_ON_SESSION_START: True,
     DATA_ENABLED: False,
     DATA_BASELINE_KWH: None,
     DATA_INTERVAL_ACCUMULATED_KWH: 0.0,
@@ -54,6 +64,7 @@ DEFAULTS: Final = {
     DATA_LAST_STOP_REASON: "",
     DATA_LAST_ERROR: "",
     DATA_STOP_COUNT: 0,
+    DATA_LAST_APPLIED_CURRENT: None,
 }
 
 STATUS_DISABLED: Final = "disabled"
@@ -62,3 +73,4 @@ STATUS_TARGET_REACHED: Final = "target_reached"
 STATUS_ERROR: Final = "error"
 STATUS_WAITING_FOR_ENERGY: Final = "waiting_for_energy"
 STATUS_WAITING_FOR_POWER: Final = "waiting_for_power"
+STATUS_WAITING_FOR_CURRENT: Final = "waiting_for_current"

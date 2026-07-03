@@ -16,21 +16,28 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CREATE_NOTIFICATION,
+    CONF_CURRENT_ENTITY,
     CONF_ENERGY_MODE,
     CONF_ENERGY_SENSOR,
     CONF_POWER_SENSOR,
+    CONF_START_ENTITY,
+    CONF_START_SERVICE,
     CONF_STOP_ENTITY,
     CONF_STOP_SERVICE,
+    DATA_APPLY_CURRENT_ON_START,
     DATA_BASELINE_KWH,
     DATA_BATTERY_CAPACITY,
+    DATA_CHARGER_MAX_CURRENT,
     DATA_DYNAMIC_BUFFER_ENABLED,
     DATA_EARLY_STOP_BUFFER,
     DATA_EFFICIENCY,
     DATA_ENABLED,
     DATA_INTERVAL_ACCUMULATED_KWH,
+    DATA_LAST_APPLIED_CURRENT,
     DATA_LAST_ERROR,
     DATA_LAST_STOP_REASON,
     DATA_SENSOR_LAG_SECONDS,
+    DATA_START_CHARGER_ON_SESSION_START,
     DATA_START_SOC,
     DATA_STOP_COUNT,
     DATA_STOPPED,
@@ -44,6 +51,7 @@ from .const import (
     STATUS_ERROR,
     STATUS_MONITORING,
     STATUS_TARGET_REACHED,
+    STATUS_WAITING_FOR_CURRENT,
     STATUS_WAITING_FOR_ENERGY,
     STATUS_WAITING_FOR_POWER,
     STOP_SERVICE_AUTO,
@@ -67,6 +75,8 @@ class ManagerSnapshot:
     dynamic_buffer_kwh: float
     total_buffer_kwh: float
     current_power_kw: float | None
+    charger_max_current_a: float
+    actual_charger_max_current_a: float | None
     estimated_minutes_remaining: float | None
     estimated_finish_time: datetime | None
     estimated_soc: float | None
@@ -122,6 +132,22 @@ class EvChargeLimiterManager:
         return str(value).strip() if value else None
 
     @property
+    def current_entity(self) -> str | None:
+        value = self.config.get(CONF_CURRENT_ENTITY)
+        return str(value).strip() if value else None
+
+    @property
+    def start_entity(self) -> str | None:
+        value = self.config.get(CONF_START_ENTITY)
+        if value:
+            return str(value).strip()
+        stop_entity = self.stop_entity
+        domain = stop_entity.split(".", 1)[0]
+        if domain in ("switch", "input_boolean"):
+            return stop_entity
+        return None
+
+    @property
     def stop_entity(self) -> str:
         return self.config[CONF_STOP_ENTITY]
 
@@ -139,6 +165,8 @@ class EvChargeLimiterManager:
         entity_ids = [self.energy_sensor]
         if self.power_sensor:
             entity_ids.append(self.power_sensor)
+        if self.current_entity:
+            entity_ids.append(self.current_entity)
         self._remove_state_listener = async_track_state_change_event(
             self.hass, entity_ids, self._async_state_changed
         )
@@ -170,6 +198,13 @@ class EvChargeLimiterManager:
         self.data[DATA_LAST_ERROR] = ""
         await self._async_save()
         self.async_notify_listeners()
+        if (
+            key == DATA_CHARGER_MAX_CURRENT
+            and self.data.get(DATA_ENABLED)
+            and self.data.get(DATA_APPLY_CURRENT_ON_START, True)
+            and self.current_entity
+        ):
+            await self._async_apply_charger_current()
         await self.async_evaluate()
 
     async def async_set_bool(self, key: str, value: bool) -> None:
@@ -181,7 +216,7 @@ class EvChargeLimiterManager:
         await self.async_evaluate()
 
     async def async_start_session(self) -> None:
-        """Capture a new baseline and enable monitoring."""
+        """Capture a new baseline, optionally apply current, start the charger, and enable monitoring."""
         current = self.current_energy_kwh
         self.data[DATA_BASELINE_KWH] = current
         self.data[DATA_INTERVAL_ACCUMULATED_KWH] = 0.0
@@ -191,6 +226,23 @@ class EvChargeLimiterManager:
         self.data[DATA_LAST_ERROR] = ""
         await self._async_save()
         self.async_notify_listeners()
+
+        if self.data.get(DATA_APPLY_CURRENT_ON_START, True) and self.current_entity:
+            ok = await self._async_apply_charger_current()
+            if not ok:
+                self.data[DATA_ENABLED] = False
+                await self._async_save()
+                self.async_notify_listeners()
+                return
+
+        if self.data.get(DATA_START_CHARGER_ON_SESSION_START, True):
+            ok = await self._async_call_start_action()
+            if not ok:
+                self.data[DATA_ENABLED] = False
+                await self._async_save()
+                self.async_notify_listeners()
+                return
+
         await self.async_evaluate()
 
     async def async_disable(self) -> None:
@@ -257,6 +309,95 @@ class EvChargeLimiterManager:
         else:
             self.async_notify_listeners()
 
+
+    async def _async_apply_charger_current(self) -> bool:
+        """Apply the desired charger current to the configured current entity."""
+        current_entity = self.current_entity
+        if not current_entity:
+            self.data[DATA_LAST_ERROR] = "Charger maximum current entity is not configured."
+            await self._async_save()
+            self.async_notify_listeners()
+            return False
+
+        target_current = max(0.0, float(self.data.get(DATA_CHARGER_MAX_CURRENT, 0.0)))
+        if target_current <= 0:
+            self.data[DATA_LAST_ERROR] = "Charger maximum current must be greater than 0 A."
+            await self._async_save()
+            self.async_notify_listeners()
+            return False
+
+        domain = current_entity.split(".", 1)[0]
+        if domain not in ("number", "input_number"):
+            self.data[DATA_LAST_ERROR] = f"Unsupported current entity domain: {domain}"
+            await self._async_save()
+            self.async_notify_listeners()
+            return False
+
+        try:
+            await self.hass.services.async_call(
+                domain,
+                "set_value",
+                {"entity_id": current_entity, "value": target_current},
+                blocking=True,
+            )
+            self.data[DATA_LAST_APPLIED_CURRENT] = target_current
+            self.data[DATA_LAST_ERROR] = ""
+            await self._async_save()
+            _LOGGER.info("EV charge limiter set charger maximum current to %.1f A", target_current)
+            return True
+        except Exception as err:  # noqa: BLE001 - surface the error in HA entity state
+            _LOGGER.exception("Failed to set charger maximum current")
+            self.data[DATA_LAST_ERROR] = f"Failed to set charger maximum current: {err}"
+            await self._async_save()
+            self.async_notify_listeners()
+            return False
+
+    async def _async_call_start_action(self) -> bool:
+        """Call the configured start entity."""
+        start_entity = self.start_entity
+        if not start_entity:
+            # Some chargers start automatically when plugged in. Treat no start entity as OK.
+            return True
+
+        domain = start_entity.split(".", 1)[0]
+        service = self.config.get(CONF_START_SERVICE, STOP_SERVICE_AUTO)
+
+        if service == STOP_SERVICE_AUTO:
+            if domain in ("switch", "input_boolean", "light", "fan"):
+                service_domain = domain
+                service_name = "turn_on"
+            elif domain == "button":
+                service_domain = "button"
+                service_name = "press"
+            else:
+                service_domain = "homeassistant"
+                service_name = "turn_on"
+        else:
+            if "." not in service:
+                self.data[DATA_LAST_ERROR] = f"Invalid start service: {service}"
+                await self._async_save()
+                self.async_notify_listeners()
+                return False
+            service_domain, service_name = service.split(".", 1)
+
+        try:
+            await self.hass.services.async_call(
+                service_domain,
+                service_name,
+                {"entity_id": start_entity},
+                blocking=True,
+            )
+            self.data[DATA_LAST_ERROR] = ""
+            await self._async_save()
+            _LOGGER.info("EV charge limiter started charger with %s.%s on %s", service_domain, service_name, start_entity)
+            return True
+        except Exception as err:  # noqa: BLE001 - surface the error in HA entity state
+            _LOGGER.exception("Failed to start EV charger")
+            self.data[DATA_LAST_ERROR] = f"Failed to start charger: {err}"
+            await self._async_save()
+            self.async_notify_listeners()
+            return False
+
     async def _async_call_stop_action(self, reason: str) -> None:
         """Call the configured stop entity."""
         stop_entity = self.stop_entity
@@ -307,6 +448,7 @@ class EvChargeLimiterManager:
                             f"Gerekli enerji: {self.required_grid_kwh:.2f} kWh\n"
                             f"Kesme eşiği: {self.stop_threshold_kwh:.2f} kWh\n"
                             f"Anlık güç: {self.current_power_text}\n"
+                            f"Maksimum akım: {self.charger_max_current_a:.1f} A\n"
                             f"Tahmini SoC: {self.estimated_soc_text}"
                         ),
                         "notification_id": f"{DOMAIN}_{self.entry.entry_id}_stopped",
@@ -469,6 +611,31 @@ class EvChargeLimiterManager:
         return "unknown" if power is None else f"{power:.2f} kW"
 
     @property
+    def charger_max_current_a(self) -> float:
+        return max(0.0, float(self.data.get(DATA_CHARGER_MAX_CURRENT, 0.0)))
+
+    @property
+    def actual_charger_max_current_a(self) -> float | None:
+        current_entity = self.current_entity
+        if not current_entity:
+            return None
+        state = self.hass.states.get(current_entity)
+        return self._state_to_ampere(state)
+
+    @staticmethod
+    def _state_to_ampere(state: State | None) -> float | None:
+        if state is None or state.state in ("unknown", "unavailable", ""):
+            return None
+        try:
+            value = float(state.state)
+        except (TypeError, ValueError):
+            return None
+        unit = str(state.attributes.get("unit_of_measurement", "A")).strip().lower()
+        if unit in ("ma", "milliampere", "milliamps"):
+            return value / 1000.0
+        return value
+
+    @property
     def status(self) -> str:
         if self.data.get(DATA_LAST_ERROR):
             return STATUS_ERROR
@@ -479,6 +646,8 @@ class EvChargeLimiterManager:
                 return STATUS_WAITING_FOR_ENERGY
             if self.power_sensor and self.current_power_kw is None:
                 return STATUS_WAITING_FOR_POWER
+            if self.current_entity and self.actual_charger_max_current_a is None:
+                return STATUS_WAITING_FOR_CURRENT
             return STATUS_MONITORING
         return STATUS_DISABLED
 
@@ -497,6 +666,10 @@ class EvChargeLimiterManager:
             dynamic_buffer_kwh=round(self.dynamic_buffer_kwh, 3),
             total_buffer_kwh=round(self.total_buffer_kwh, 3),
             current_power_kw=(None if self.current_power_kw is None else round(self.current_power_kw, 3)),
+            charger_max_current_a=round(self.charger_max_current_a, 1),
+            actual_charger_max_current_a=(
+                None if self.actual_charger_max_current_a is None else round(self.actual_charger_max_current_a, 1)
+            ),
             estimated_minutes_remaining=(
                 None if estimated_minutes is None else round(estimated_minutes, 1)
             ),

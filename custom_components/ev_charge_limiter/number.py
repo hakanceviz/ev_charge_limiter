@@ -5,12 +5,13 @@ from dataclasses import dataclass
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfTime
+from homeassistant.const import PERCENTAGE, UnitOfElectricCurrent, UnitOfEnergy, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DATA_BATTERY_CAPACITY,
+    DATA_CHARGER_MAX_CURRENT,
     DATA_EARLY_STOP_BUFFER,
     DATA_EFFICIENCY,
     DATA_SENSOR_LAG_SECONDS,
@@ -38,7 +39,7 @@ NUMBERS: tuple[EvNumberDescription, ...] = (
         native_min_value=10,
         native_max_value=200,
         native_step=0.1,
-        mode=NumberMode.BOX,
+        mode=NumberMode.SLIDER,
     ),
     EvNumberDescription(
         key="start_soc",
@@ -71,6 +72,16 @@ NUMBERS: tuple[EvNumberDescription, ...] = (
         mode=NumberMode.SLIDER,
     ),
     EvNumberDescription(
+        key="charger_maximum_current",
+        name="Charger Maximum Current",
+        data_key=DATA_CHARGER_MAX_CURRENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        native_min_value=6,
+        native_max_value=64,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+    ),
+    EvNumberDescription(
         key="early_stop_buffer",
         name="Manual Early Stop Buffer",
         data_key=DATA_EARLY_STOP_BUFFER,
@@ -78,7 +89,7 @@ NUMBERS: tuple[EvNumberDescription, ...] = (
         native_min_value=0,
         native_max_value=5,
         native_step=0.05,
-        mode=NumberMode.BOX,
+        mode=NumberMode.SLIDER,
     ),
     EvNumberDescription(
         key="sensor_lag_seconds",

@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from .const import (
+    DATA_CHARGER_MAX_CURRENT,
     DATA_START_SOC,
     DOMAIN,
     PLATFORMS,
@@ -22,10 +23,14 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_START_SESSION = "start_session"
 SERVICE_STOP_NOW = "stop_now"
 SERVICE_SET_START_SOC = "set_start_soc"
+SERVICE_SET_CHARGER_CURRENT = "set_charger_current"
 
 SERVICE_ENTRY_SCHEMA = vol.Schema({vol.Optional("entry_id"): cv.string})
 SERVICE_SET_START_SOC_SCHEMA = SERVICE_ENTRY_SCHEMA.extend(
     {vol.Required("start_soc"): vol.Coerce(float)}
+)
+SERVICE_SET_CHARGER_CURRENT_SCHEMA = SERVICE_ENTRY_SCHEMA.extend(
+    {vol.Required("current"): vol.Coerce(float)}
 )
 
 
@@ -62,6 +67,11 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             await manager.async_set_value(DATA_START_SOC, call.data["start_soc"])
             await manager.async_start_session()
 
+    async def _handle_set_charger_current(call: ServiceCall) -> None:
+        manager = await _manager_from_call(call)
+        if manager:
+            await manager.async_set_value(DATA_CHARGER_MAX_CURRENT, call.data["current"])
+
     if not hass.services.has_service(DOMAIN, SERVICE_START_SESSION):
         hass.services.async_register(
             DOMAIN, SERVICE_START_SESSION, _handle_start_session, schema=SERVICE_ENTRY_SCHEMA
@@ -74,6 +84,12 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             SERVICE_SET_START_SOC,
             _handle_set_start_soc,
             schema=SERVICE_SET_START_SOC_SCHEMA,
+        )
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_SET_CHARGER_CURRENT,
+            _handle_set_charger_current,
+            schema=SERVICE_SET_CHARGER_CURRENT_SCHEMA,
         )
 
     return True
